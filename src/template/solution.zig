@@ -4,6 +4,7 @@ const lib = @import("lib");
 test "partOne" {
     var output_buffer: [256]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
+    errdefer std.debug.print("Error: {s}\n", .{output.buffered()});
     const input =
         \\123
         \\456
@@ -22,6 +23,7 @@ pub fn partOne(allocator: std.mem.Allocator, input: []const u8, output: *std.Io.
 test "partTwo" {
     var output_buffer: [256]u8 = undefined;
     var output = std.io.Writer.fixed(&output_buffer);
+    errdefer std.debug.print("Error: {s}\n", .{output.buffered()});
     const input =
         \\123
         \\456

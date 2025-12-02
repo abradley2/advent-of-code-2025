@@ -66,13 +66,58 @@ test "partTwo" {
         \\ 824824821-824824827,2121212118-2121212124
     ;
     try partTwo(std.testing.allocator, input, &output);
-    try std.testing.expectEqualStrings("0", output.buffered());
+    try std.testing.expectEqualStrings("4174379265", output.buffered());
 }
 
-pub fn partTwo(allocator: std.mem.Allocator, input: []const u8, output: *std.Io.Writer) !void {
-    const result: i64 = 0;
-    _ = allocator;
-    _ = input;
+pub fn partTwo(_: std.mem.Allocator, input: []const u8, output: *std.Io.Writer) Error!void {
+    var result: usize = 0;
+    var entries_iter = std.mem.tokenizeAny(u8, input, " ,\n");
+    var line: usize = 1;
+
+    var id_buff: [256]u8 = undefined;
+
+    while (entries_iter.next()) |entry| {
+        defer line += 1;
+        errdefer output.print("Error at line {d}", .{line}) catch {};
+
+        var entry_iter = std.mem.tokenizeAny(u8, entry, " -");
+        const start = entry_iter.next() orelse return error.ParserError;
+        const end = entry_iter.next() orelse return error.ParserError;
+
+        const start_id = try std.fmt.parseInt(usize, start[0..], 10);
+        const end_id = try std.fmt.parseInt(usize, end[0..], 10);
+
+        var current_id = start_id;
+        while (current_id < end_id + 1) {
+            defer current_id += 1;
+
+            var id_ascii = try std.fmt.bufPrint(id_buff[0..], "{d}", .{current_id});
+            if (id_ascii.len == 1) continue;
+
+            var current_len = @divTrunc(id_ascii.len, 2);
+            entry_subsection: while (current_len > 0) : (current_len -= 1) {
+                if (id_ascii.len % current_len != 0) {
+                    continue;
+                }
+
+                const l = if (current_len == 1) id_ascii[0..1] else id_ascii[0..@divExact(id_ascii.len, current_len)];
+
+                var r_start = l.len;
+                var match: bool = true;
+
+                std.debug.assert(r_start != id_ascii.len);
+                while (r_start != id_ascii.len) : (r_start += l.len) {
+                    const r = id_ascii[r_start .. r_start + l.len];
+                    if (std.mem.eql(u8, l, r) == false) match = false;
+                }
+
+                if (match) {
+                    result += current_id;
+                    break :entry_subsection;
+                }
+            }
+        }
+    }
     _ = try output.print("{d}", .{result});
 }
 
