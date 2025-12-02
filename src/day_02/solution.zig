@@ -1,30 +1,69 @@
 const std = @import("std");
 const lib = @import("lib");
 
+pub const Error: type =
+    std.fmt.ParseIntError ||
+    std.fmt.BufPrintError ||
+    error{
+        WriteFailed,
+        ParserError,
+    };
+
 test "partOne" {
     var output_buffer: [256]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
+    errdefer std.debug.print("Error: {s}", .{output.buffered()});
     const input =
-        \\123
-        \\456
+        \\ 11-22,95-115,998-1012,1188511880-1188511890,222220-222224,
+        \\ 1698522-1698528,446443-446449,38593856-38593862,565653-565659,
+        \\ 824824821-824824827,2121212118-2121212124
     ;
     try partOne(std.testing.allocator, input, &output);
-    try std.testing.expectEqualStrings("0", output.buffered());
+    try std.testing.expectEqualStrings("1227775554", output.buffered());
 }
 
-pub fn partOne(allocator: std.mem.Allocator, input: []const u8, output: *std.Io.Writer) !void {
-    const result: i64 = 0;
-    _ = allocator;
-    _ = input;
+pub fn partOne(_: std.mem.Allocator, input: []const u8, output: *std.Io.Writer) Error!void {
+    var result: usize = 0;
+    var entries_iter = std.mem.tokenizeAny(u8, input, " ,\n");
+    var line: usize = 1;
+
+    var id_buff: [256]u8 = undefined;
+
+    while (entries_iter.next()) |entry| {
+        defer line += 1;
+        errdefer output.print("Error at line {d}", .{line}) catch {};
+
+        var entry_iter = std.mem.tokenizeAny(u8, entry, " -");
+        const start = entry_iter.next() orelse return error.ParserError;
+        const end = entry_iter.next() orelse return error.ParserError;
+
+        const start_id = try std.fmt.parseInt(usize, start[0..], 10);
+        const end_id = try std.fmt.parseInt(usize, end[0..], 10);
+
+        var current_id = start_id;
+        while (current_id < end_id + 1) {
+            defer current_id += 1;
+
+            const id_ascii = try std.fmt.bufPrint(id_buff[0..], "{d}", .{current_id});
+            if (id_ascii.len % 2 != 0) continue;
+
+            const l = id_ascii[0..@divExact(id_ascii.len, 2)];
+            const r = id_ascii[@divExact(id_ascii.len, 2)..];
+
+            if (std.mem.eql(u8, l, r)) result += current_id;
+        }
+    }
     _ = try output.print("{d}", .{result});
 }
 
 test "partTwo" {
     var output_buffer: [256]u8 = undefined;
     var output = std.io.Writer.fixed(&output_buffer);
+    errdefer std.debug.print("Error: {s}", .{output.buffered()});
     const input =
-        \\123
-        \\456
+        \\ 11-22,95-115,998-1012,1188511880-1188511890,222220-222224,
+        \\ 1698522-1698528,446443-446449,38593856-38593862,565653-565659,
+        \\ 824824821-824824827,2121212118-2121212124
     ;
     try partTwo(std.testing.allocator, input, &output);
     try std.testing.expectEqualStrings("0", output.buffered());

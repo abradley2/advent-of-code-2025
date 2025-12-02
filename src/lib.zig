@@ -35,7 +35,9 @@ pub fn runSolution(
 
     _ = try writer.write(name);
     _ = try writer.write(": ");
-    try solution(allocator, input, &stdout_writer.interface);
+    solution(allocator, input, &stdout_writer.interface) catch {
+        _ = try writer.write(" (ERROR) ");
+    };
     _ = try writer.write("\n");
     _ = try writer.flush();
 }
