@@ -42,7 +42,14 @@ pub fn partOne(allocator: Allocator, raw_input: []const u8, output: *std.Io.Writ
             .sum => 0,
         };
         for (0..row_count) |row_idx| {
-            const item = input.data[row_idx * input.columns + column_idx];
+            const item = std.fmt.parseInt(
+                u64,
+                input.data[row_idx * input.columns + column_idx],
+                10,
+            ) catch |err| {
+                output.print("invalid int at row {d}, column {d}\n", .{ row_idx + 1, column_idx + 1 }) catch {};
+                return err;
+            };
             value = switch (operation) {
                 .product => value * item,
                 .sum => value + item,
@@ -92,12 +99,12 @@ const Operation: type = enum(u1) {
 
 const Input: type = struct {
     columns: usize,
-    data: []u64,
+    data: [][]const u8,
     operations: []Operation,
 };
 
 pub fn parseInput(allocator: Allocator, input: []const u8, output: *std.Io.Writer) Error!Input {
-    var data: ArrayList(u64) = .empty;
+    var data: ArrayList([]const u8) = .empty;
     errdefer data.deinit(allocator);
 
     var operations: ArrayList(Operation) = .empty;
@@ -112,11 +119,7 @@ pub fn parseInput(allocator: Allocator, input: []const u8, output: *std.Io.Write
 
         var column_idx: usize = 0;
         while (line.next()) |column_bytes| : (column_idx += 1) {
-            const column = std.fmt.parseInt(u64, column_bytes, 10) catch |err| {
-                output.print("ParseInt error at line: {d}\n", .{line_idx + 1}) catch {};
-                return err;
-            };
-            try data.append(allocator, column);
+            try data.append(allocator, column_bytes);
             columns = @max(column_idx + 1, columns);
         }
 
