@@ -65,12 +65,7 @@ pub fn partOne(allocator: Allocator, raw_input: []const u8, output: *std.Io.Writ
 test "partTwo" {
     var output_buffer: [256]u8 = undefined;
     var output = std.io.Writer.fixed(&output_buffer);
-    const input =
-        \\123 328  51 64 
-        \\45 64  387 23 
-        \\6 98  215 314
-        \\*   +   *   +  
-    ;
+    const input = @embedFile("./sample_input.txt");
     partTwo(std.testing.allocator, input, &output) catch |err| {
         std.debug.print("Error: {s}\n", .{output.buffered()});
         return err;
@@ -80,8 +75,7 @@ test "partTwo" {
 
 pub fn partTwo(allocator: Allocator, input: []const u8, output: *std.Io.Writer) !void {
     const result: i64 = 0;
-    _ = allocator;
-    _ = input;
+    try parsePartTwo(allocator, input, output);
     _ = try output.print("{d}", .{result});
 }
 
@@ -155,4 +149,16 @@ pub fn parseInput(allocator: Allocator, input: []const u8, output: *std.Io.Write
         .data = try data.toOwnedSlice(allocator),
         .operations = try operations.toOwnedSlice(allocator),
     };
+}
+
+fn parsePartTwo(allocator: Allocator, input: []const u8, output: *std.Io.Writer) Error!void {
+    _ = allocator;
+
+    var lines = std.mem.splitBackwardsScalar(u8, input, '\n');
+    const last_line = lines.next() orelse {
+        _ = output.write("last line missing") catch return error.InvalidInput;
+        return error.InvalidInput;
+    };
+
+    std.debug.print("last line = {s}\n", .{last_line});
 }
